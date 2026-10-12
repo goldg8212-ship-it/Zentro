@@ -1,0 +1,6 @@
+{
+  "name": "Block Dungeon Legends",
+  "description": "A 3D action RPG dungeon crawler featuring voxel heroes, real-time combat, loot, and epic boss battles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

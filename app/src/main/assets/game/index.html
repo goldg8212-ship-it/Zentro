@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>BLOCK DUNGEON LEGENDS</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- 3D WebGL Canvas Layer -->
+  <div id="canvas-container"></div>
+
+  <!-- Floating Damage Numbers & Combat Floating UI -->
+  <div id="floating-ui-container"></div>
+
+  <!-- In-Game Landscape Heads Up Display (HUD) -->
+  <div id="game-hud" class="hidden">
+    <!-- Top-Left Player Stats -->
+    <div class="hud-top-left">
+      <div id="hud-level-badge" class="level-badge">Lv.1</div>
+      <div class="bars-stack">
+        <div class="bar-wrapper hp-bar">
+          <div id="hud-hp-fill" class="bar-fill hp-fill" style="width: 100%;"></div>
+          <span id="hud-hp-text" class="bar-text">150 / 150</span>
+        </div>
+        <div class="bar-wrapper xp-bar">
+          <div id="hud-xp-fill" class="bar-fill xp-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top-Center Boss Bar (Appears during Boss encounters) -->
+    <div id="boss-bar-container" class="boss-bar-container hidden">
+      <div id="boss-title" class="boss-title">THE OBSIDIAN TITAN</div>
+      <div class="boss-bar-wrapper">
+        <div id="boss-hp-fill" class="boss-bar-fill" style="width: 100%;"></div>
+      </div>
+    </div>
+
+    <!-- Top-Right Currency & Quick Menus -->
+    <div class="hud-top-right">
+      <div class="gold-counter">
+        <span>🪙</span>
+        <span id="hud-gold-text">50</span>
+      </div>
+      <div id="hud-weapon-icon" class="hud-slot-icon" title="Equipped Weapon">⚔️</div>
+      <button id="btn-inventory-hud" class="hud-btn" title="Open Inventory">🎒</button>
+      <button id="btn-pause" class="hud-btn" title="Pause Game">⏸️</button>
+    </div>
+
+    <!-- Bottom-Left Virtual Joystick for movement -->
+    <div id="joystick-zone" class="joystick-zone">
+      <div id="joystick-base" class="joystick-base">
+        <div id="joystick-knob" class="joystick-knob"></div>
+      </div>
+    </div>
+
+    <!-- Bottom-Right Action Buttons Cluster -->
+    <div class="action-cluster">
+      <!-- Large Primary Attack Button -->
+      <div id="btn-attack" class="btn-ctrl btn-attack" title="Attack">
+        <span class="btn-icon">⚔️</span>
+        <span class="btn-label">ATTACK</span>
+      </div>
+
+      <!-- Dodge / Roll Button -->
+      <div id="btn-dodge" class="btn-ctrl btn-dodge" title="Dodge Roll">
+        <span class="btn-icon">💨</span>
+        <span class="btn-label">ROLL</span>
+        <div id="dodge-cooldown-overlay" class="cooldown-overlay"></div>
+      </div>
+
+      <!-- Ranged Bow Button -->
+      <div id="btn-bow" class="btn-ctrl btn-bow" title="Bow / Ranged Shot">
+        <span class="btn-icon">🏹</span>
+        <span class="btn-label">BOW</span>
+      </div>
+
+      <!-- Special Ability Button -->
+      <div id="btn-ability" class="btn-ctrl btn-ability" title="Thunder Cleave">
+        <span class="btn-icon">⚡</span>
+        <span class="btn-label">SKILL</span>
+        <div id="ability-cooldown-overlay" class="cooldown-overlay"></div>
+      </div>
+
+      <!-- Healing Potion Button -->
+      <div id="btn-potion" class="btn-ctrl btn-potion" title="Drink Healing Potion">
+        <span class="btn-icon">🧪</span>
+        <span id="potion-count" class="badge-count">3</span>
+        <div id="potion-cooldown-overlay" class="cooldown-overlay"></div>
+      </div>
+
+      <!-- Chest / Portal Interact Button -->
+      <div id="btn-interact" class="btn-ctrl btn-interact" title="Open Chest / Exit">
+        <span class="btn-icon">🗝️</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Menu Overlay -->
+  <div id="main-menu">
+    <div class="game-logo-wrapper">
+      <h1 class="game-title">BLOCK DUNGEON LEGENDS</h1>
+      <div class="game-subtitle">3D Voxel Action RPG</div>
+    </div>
+    <div class="main-menu-buttons">
+      <button id="btn-main-play" class="btn-menu primary">PLAY ADVENTURE</button>
+      <button id="btn-main-dungeons" class="btn-menu">DUNGEONS</button>
+      <button id="btn-main-inv" class="btn-menu">HERO & GEAR</button>
+      <button id="btn-main-settings" class="btn-menu">SETTINGS</button>
+    </div>
+  </div>
+
+  <!-- Inventory & Equipment Modal -->
+  <div id="inventory-modal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2>HERO EQUIPMENT & LOOT</h2>
+        <button class="close-modal-btn" data-close="inventory-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="inventory-container">
+          <!-- Left: Equipment Paperdoll & Backpack -->
+          <div class="inv-left">
+            <div class="paperdoll-grid">
+              <div id="slot-head" class="equip-slot"></div>
+              <div id="slot-weapon" class="equip-slot"></div>
+              <div id="slot-chest" class="equip-slot"></div>
+              <div id="slot-boots" class="equip-slot"></div>
+              <div id="slot-artifact" class="equip-slot"></div>
+            </div>
+            <div class="backpack-header">BACKPACK STORAGE (24 SLOTS)</div>
+            <div id="backpack-grid" class="backpack-grid"></div>
+          </div>
+
+          <!-- Right: Item Detail & Hero Stats -->
+          <div class="inv-right">
+            <div class="hero-stats-panel">
+              <p>Health: <b id="inv-stat-hp">150 / 150</b></p>
+              <p>Damage: <b id="inv-stat-dmg">24</b></p>
+              <p>Defense: <b id="inv-stat-def">8</b></p>
+              <p>Speed: <b id="inv-stat-speed">6.2</b></p>
+              <p>Gold: 🪙 <b id="inv-stat-gold">50</b></p>
+            </div>
+            <div id="item-detail-view" class="item-detail-view">
+              <p class="select-hint">Select any item to view stats and equip.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dungeon Selection Modal -->
+  <div id="dungeon-select-modal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2>SELECT DUNGEON</h2>
+        <button class="close-modal-btn" data-close="dungeon-select-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="dungeon-cards-list" class="dungeons-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause Modal -->
+  <div id="pause-modal" class="modal-backdrop">
+    <div class="modal-window" style="max-width: 380px;">
+      <div class="modal-header">
+        <h2>GAME PAUSED</h2>
+        <button class="close-modal-btn" data-close="pause-modal">✕</button>
+      </div>
+      <div class="modal-body" style="flex-direction: column;">
+        <button id="btn-resume" class="btn-menu primary" style="width: 100%;">RESUME</button>
+        <button id="btn-pause-settings" class="btn-menu" style="width: 100%;">SETTINGS</button>
+        <button id="btn-quit-main" class="btn-menu" style="width: 100%;">EXIT TO MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-backdrop">
+    <div class="modal-window" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2>GAME SETTINGS</h2>
+        <button class="close-modal-btn" data-close="settings-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-list">
+          <div class="setting-item">
+            <label for="setting-graphics">Graphics Quality</label>
+            <select id="setting-graphics">
+              <option value="low">Low (Fast 60fps)</option>
+              <option value="medium">Medium</option>
+              <option value="high" selected>High (Shadows & Lights)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label for="setting-sfx">Sound Effects Volume</label>
+            <input type="range" id="setting-sfx" min="0" max="1" step="0.1" value="0.8">
+          </div>
+          <div class="setting-item">
+            <label for="setting-music">Music & Ambient Volume</label>
+            <input type="range" id="setting-music" min="0" max="1" step="0.1" value="0.6">
+          </div>
+          <div class="setting-item">
+            <label for="setting-mute">Mute All Audio</label>
+            <input type="checkbox" id="setting-mute">
+          </div>
+          <div class="setting-item" style="border: 1px solid #d32f2f;">
+            <label style="color:#ef5350;">Reset Progress</label>
+            <button id="btn-reset-save" class="btn-action btn-danger">RESET SAVE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Victory Modal -->
+  <div id="victory-modal" class="modal-backdrop">
+    <div class="modal-window" style="max-width: 420px; text-align: center;">
+      <div class="modal-header">
+        <h2 style="color: #ffd54f;">🏆 DUNGEON CONQUERED!</h2>
+      </div>
+      <div class="modal-body" style="flex-direction: column; align-items: center; gap: 14px;">
+        <p style="font-size: 14px; color: #80deea;">You vanquished the darkness and claimed ancient glory!</p>
+        <div style="background: #11101b; padding: 14px 24px; border-radius: 8px; width: 80%; display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+          <p>Enemies Defeated: <b id="vic-enemies" style="color:#ffd54f;">0</b></p>
+          <p>Gold Looted: <b id="vic-gold" style="color:#ffd54f;">0</b></p>
+        </div>
+        <button id="btn-victory-continue" class="btn-menu primary" style="width: 80%;">CONTINUE ADVENTURE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Defeat Modal -->
+  <div id="defeat-modal" class="modal-backdrop">
+    <div class="modal-window" style="max-width: 420px; text-align: center;">
+      <div class="modal-header">
+        <h2 style="color: #f44336;">💀 FALLEN IN BATTLE</h2>
+      </div>
+      <div class="modal-body" style="flex-direction: column; align-items: center; gap: 14px;">
+        <p style="font-size: 14px; color: #b0bec5;">The dungeon's ancient denizens overcame your strength.</p>
+        <button id="btn-defeat-retry" class="btn-menu primary" style="width: 80%;">RETRY FLOOR</button>
+        <button id="btn-defeat-main" class="btn-menu" style="width: 80%;">RETURN TO MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three.js Library (Local offline bundle) -->
+  <script src="libs/three.min.js"></script>
+
+  <!-- Game Modules -->
+  <script src="js/data.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/dungeon.js"></script>
+  <script src="js/enemies.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
